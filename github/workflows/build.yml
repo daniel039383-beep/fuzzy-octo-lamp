@@ -1,0 +1,36 @@
+name: Build Dylib
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          curl -sSL https://github.com/theos/sdks/archive/master.zip -o sdks.zip
+          unzip -q sdks.zip
+          mv sdks-master/*.sdk $HOME/theos/sdks/
+          rm -rf sdks.zip sdks-master
+
+      - name: Compile Dylib
+        env:
+          THEOS: ${{ runner.home }}/theos
+        run: |
+          make FINALPACKAGE=1
+          mkdir -p output
+          cp .theos/obj/WhatsAppModMenu.dylib output/
+
+      - name: Upload Dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsAppModMenu-Dylib
+          path: output/WhatsAppModMenu.dylib
